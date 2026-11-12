@@ -64,12 +64,12 @@
     "prepublishOnly": "napi prepublish -t npm --no-gh-release"
   },
   "devDependencies": {
-    "@emnapi/core": "^1.11.3",
-    "@emnapi/runtime": "^1.11.3",
+    "@emnapi/core": "^2.0.0-beta.3",
+    "@emnapi/runtime": "^2.0.0-beta.3",
     "@napi-rs/cli": "^3.10.12",
     "@napi-rs/wasm-runtime": "^1.2.7",
     "@types/node": "^22.0.0",
-    "emnapi": "^1.11.3",
+    "emnapi": "^2.0.0-beta.3",
     "esbuild": "^0.28.2",
     "miniflare": "^4.20260730.0",
     "typescript": "^7.0.2",
