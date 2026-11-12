@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.tgz
 /target/
+# Copied from the repo root by bindings/node's prepack script, for the npm package page.
+/bindings/node/README.md
+/bindings/node/LICENSE

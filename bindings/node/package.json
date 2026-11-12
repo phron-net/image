@@ -61,6 +61,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "prepack": "cp ../../README.md ../../LICENSE .",
     "prepublishOnly": "napi prepublish -t npm --no-gh-release"
   },
   "devDependencies": {

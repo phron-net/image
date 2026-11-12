@@ -122,3 +122,12 @@ jobs:
             (cd "$dir" && npm pack --dry-run)
             echo "::endgroup::"
           done
+      # npm takes the package page from the package directory; prepack copies the root's files.
+      - name: The root package carries the README and LICENSE
+        working-directory: bindings/node
+        run: |
+          set -euo pipefail
+          listing=$(npm pack --dry-run 2>&1)
+          for f in README.md LICENSE; do
+            grep -qE "notice .* ${f}\$" <<<"$listing" || { echo "missing $f"; exit 1; }
+          done
