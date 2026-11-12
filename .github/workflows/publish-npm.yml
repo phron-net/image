@@ -9,6 +9,9 @@ on:
   push:
     tags:
       - "v*"
+  # release.yml dispatches this on the new tag (a tag pushed with GITHUB_TOKEN triggers nothing).
+  # Run it with the tag as the ref: the version check below compares the ref name to package.json.
+  workflow_dispatch:
 
 permissions:
   contents: read

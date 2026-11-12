@@ -9,8 +9,9 @@ once, because the registries have no API for it.
    `.sampo/changesets/` (`npm/@phron/image: minor (Added)`). Use the `sampo-changeset` skill.
 2. A push to `main` that carries changesets runs `release.yml`: `sampo release` bumps
    `bindings/node/package.json` and `CHANGELOG.md`, the workflow commits that and pushes the
-   `v<version>` tag as the shared GitHub App (a tag pushed with `GITHUB_TOKEN` triggers nothing).
-3. The tag runs `publish-npm.yml`: Rust checks, the seven-target build (`build-native.yml`),
+   `v<version>` tag, then dispatches `publish-npm.yml` on it (a tag pushed with `GITHUB_TOKEN`
+   triggers nothing, a `workflow_dispatch` does; no GitHub App key is involved).
+3. `publish-npm.yml` runs on that tag: Rust checks, the seven-target build (`build-native.yml`),
    then `napi create-npm-dirs` and `napi artifacts` assemble the platform packages, and
    `npm publish` of `@phron/image` publishes them first (`prepublishOnly: napi prepublish -t npm`)
    and the root package last. The job runs on `ubuntu-latest` because npm refuses self-hosted
@@ -28,6 +29,4 @@ and a version in step with the npm package).
   environment `npm-publish`. A name that does not exist yet takes a _pending_ publisher
   (npmjs.com, account, Trusted Publishers). The match is by exact string; a mismatch is a bare
   403/404.
-- **Release secret:** `PROTOS_APP_PRIVATE_KEY` on `phron-net/image`, projected declaratively
-  (the `gha-ci` and `cp-github` skills), so `release.yml` can push the tag as the App.
 - **First publish** waits for the first CI run on `main` to be green.

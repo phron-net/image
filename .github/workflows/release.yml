@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write # gh workflow run publish-npm.yml
 
 concurrency:
   group: release
@@ -44,23 +45,16 @@ jobs:
           echo "released=true" >> "$GITHUB_OUTPUT"
           echo "version=$(node -p "require('./bindings/node/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      # A tag pushed with GITHUB_TOKEN triggers nothing, so push it as the shared GitHub App.
-      - uses: actions/create-github-app-token@v3
-        if: steps.commit.outputs.released == 'true'
-        id: app-token
-        with:
-          client-id: Iv23lieKTpo913fhNjvY
-          private-key: ${{ secrets.PROTOS_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-
-      - name: Tag the release
+      # A tag pushed with GITHUB_TOKEN triggers no workflow, but a `workflow_dispatch` started
+      # with it does. So push the tag, then dispatch publish-npm.yml on that tag. No GitHub App
+      # key is needed, and the npm Trusted Publisher still sees the workflow file publish-npm.yml.
+      - name: Tag the release and start the publish
         if: steps.commit.outputs.released == 'true'
         env:
-          TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.commit.outputs.version }}
         run: |
           set -euo pipefail
-          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git tag "v${VERSION}"
           git push origin "v${VERSION}"
+          gh workflow run publish-npm.yml --ref "v${VERSION}"
