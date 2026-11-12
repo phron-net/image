@@ -16,7 +16,9 @@
       "!.claude",
       "!.agents",
       "!.handover",
-      "!.scratch"
+      "!.scratch",
+      "!.sampo/changesets",
+      "!**/CHANGELOG.md"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
