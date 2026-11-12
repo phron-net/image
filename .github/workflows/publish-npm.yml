@@ -46,7 +46,6 @@ jobs:
       # Trusted Publishing needs npm 11.5.1 or later.
       - run: npm install -g npm@^11
       - run: npm ci
-      - run: npm run build -w @phron/image
 
       - name: Check the tag matches the package version
         run: |
@@ -68,6 +67,11 @@ jobs:
           # The loader and types are platform-independent: every build writes the same ones.
           cp artifacts/bindings-x86_64-unknown-linux-gnu/native.cjs artifacts/bindings-x86_64-unknown-linux-gnu/native.d.cts .
           ls npm/*
+
+      # tsc imports ../native.d.cts, so it runs only after the loader and types are in place.
+      - name: Build the TypeScript
+        working-directory: bindings/node
+        run: npm run build
 
       # `prepublishOnly` (`napi prepublish -t npm`) publishes the platform packages first, then
       # npm publishes the root package, whose optionalDependencies now name them.
