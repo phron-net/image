@@ -31,7 +31,7 @@ const mf = new Miniflare({
   modules: true,
   scriptPath: join(outdir, "worker.js"),
   modulesRules: [{ type: "CompiledWasm", include: ["**/*.wasm"] }],
-  compatibilityDate: "2026-11-01",
+  compatibilityDate: "2026-08-01",
   compatibilityFlags: ["nodejs_compat"],
 });
 
