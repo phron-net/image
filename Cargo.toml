@@ -1,0 +1,11 @@
+# Cargo workspace: the Rust core (`phron-image`) and the language bindings that wrap it.
+# Rust is the single implementation of the URL format; see docs/adr/0001-rust-core-multi-language.md.
+[workspace]
+resolver = "2"
+members = ["crates/phron-image", "bindings/node"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.89"
+license = "MIT"
+repository = "https://github.com/phron-net/image"

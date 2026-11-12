@@ -1,0 +1,19 @@
+[package]
+name = "phron-image"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Build and sign Phron Image URLs. The Rust core behind the Phron Image SDKs."
+readme = "README.md"
+keywords = ["image", "signed-url", "hmac", "phron"]
+categories = ["web-programming"]
+
+[dependencies]
+base64 = "0.22"
+hmac = "0.13"
+sha2 = "0.11"
+
+[dev-dependencies]
+serde_json = "1"

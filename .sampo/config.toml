@@ -1,0 +1,25 @@
+# Sampo configuration. See https://github.com/bruits/sampo and the multi-language-sdk skill.
+version = 1
+
+[git]
+default_branch = "main"
+
+[github]
+repository = "phron-net/image"
+
+[changesets]
+tags = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"]
+
+[changelog]
+show_commit_hash = true
+show_acknowledgments = true
+show_release_date = true
+release_date_format = "%Y-%m-%d"
+release_date_timezone = "UTC"
+
+[packages]
+ignore_unpublished = false
+# The Rust crates are not released yet: crates.io needs its own trusted-publisher setup first
+# (see PUBLISHING.md). Sampo reads literal `publish = false` only, not an inherited one, so
+# the crates are listed here by their `cargo/` canonical identifiers.
+ignore = ["cargo/phron-image", "cargo/phron-image-node"]

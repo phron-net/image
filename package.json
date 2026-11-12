@@ -1,61 +1,15 @@
 {
-  "name": "@phron/image",
-  "version": "0.1.0",
-  "description": "Build and sign Phron Image URLs. Zero dependencies, Web Crypto, runs on Node 20+, Deno, Bun and edge runtimes.",
-  "keywords": [
-    "phron",
-    "image",
-    "signed-url",
-    "hmac",
-    "nextjs"
+  "name": "phron-image-workspace",
+  "private": true,
+  "description": "npm workspace root for phron-net/image; the published package is bindings/node (@phron/image).",
+  "workspaces": [
+    "bindings/node"
   ],
-  "license": "MIT",
-  "type": "module",
-  "sideEffects": false,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/phron-net/image.git"
-  },
-  "homepage": "https://github.com/phron-net/image#readme",
-  "bugs": "https://github.com/phron-net/image/issues",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./node": {
-      "types": "./dist/node.d.ts",
-      "default": "./dist/node.js"
-    },
-    "./next": {
-      "types": "./dist/next.d.ts",
-      "default": "./dist/next.js"
-    },
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "dist"
-  ],
-  "engines": {
-    "node": ">=20"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.7"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit",
     "lint": "biome check .",
-    "test": "vitest run",
-    "prepack": "npm run build"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.6.7",
-    "@types/node": "^22.0.0",
-    "typescript": "^7.0.2",
-    "vitest": "^5.1.0"
+    "conformance:generate": "node conformance/generate.mjs"
   }
 }

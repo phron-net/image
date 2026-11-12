@@ -1,0 +1,66 @@
+# Version-and-tag: `sampo release` turns pending changesets into a version bump and CHANGELOG
+# entries, this workflow commits them and pushes the `v<version>` tag, and the tag runs
+# publish-npm.yml. Sampo never runs `publish` here: the npm packages are built and published by
+# publish-npm.yml, where the platform binaries exist.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".sampo/changesets/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0 # sampo reads history and existing tags
+
+      - uses: bruits/sampo/crates/sampo-github-action@cargo-sampo-github-action-v0.17.0
+        with:
+          command: release
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pushed with GITHUB_TOKEN on purpose: it triggers no workflow, so the release commit is
+      # not built twice. The tag below is what builds.
+      - name: Commit the release
+        id: commit
+        run: |
+          set -euo pipefail
+          git add bindings/node/package.json bindings/node/CHANGELOG.md .sampo/changesets
+          if git diff --cached --quiet; then echo "released=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git commit -m "chore(release): version packages"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "released=true" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./bindings/node/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # A tag pushed with GITHUB_TOKEN triggers nothing, so push it as the shared GitHub App.
+      - uses: actions/create-github-app-token@v3
+        if: steps.commit.outputs.released == 'true'
+        id: app-token
+        with:
+          client-id: Iv23lieKTpo913fhNjvY
+          private-key: ${{ secrets.PROTOS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Tag the release
+        if: steps.commit.outputs.released == 'true'
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.commit.outputs.version }}
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"

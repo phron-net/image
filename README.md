@@ -2,8 +2,12 @@
 
 Build and sign [Phron Image](https://phron.net) URLs from TypeScript and JavaScript.
 
-- Zero runtime dependencies, ESM only.
-- Uses Web Crypto, so it runs on Node 20+, Deno, Bun and edge runtimes.
+- One Rust implementation of the URL format, bound to Node.js (20+) through napi-rs: prebuilt
+  binaries for Linux (glibc and musl, x64 and arm64), macOS (x64 and arm64) and Windows x64.
+  No install-time compile.
+- Node only for now: the signing code does not run in browsers or on edge runtimes (Cloudflare
+  Workers, Vercel Edge, Deno Deploy). `@phron/image/next` is the exception: it builds public
+  URLs in plain TypeScript and runs in the browser.
 - Signed URLs, unsigned public URLs, API URLs, `srcset`, and a Next.js loader for public sources.
 
 ```sh
@@ -24,7 +28,7 @@ once in the [console](https://console.phron.net).
 ```ts
 import { options, roundedExpiry, signUrl } from "@phron/image";
 
-const url = await signUrl({
+const url = signUrl({
   label: "my-source", // https://my-source.phronusercontent.com
   key: process.env.PHRON_IMAGE_KEY!,
   salt: process.env.PHRON_IMAGE_SALT!,
@@ -40,12 +44,6 @@ hex-decoded salt followed by the path exactly as sent. The SDK encodes the path 
 the encoded string.
 
 Use `baseUrl` instead of `label` for a custom domain: `baseUrl: "https://img.example.com"`.
-
-On Node you can sign synchronously from the `node` subpath:
-
-```ts
-import { signUrlSync } from "@phron/image/node";
-```
 
 ### Expiry and caching
 
@@ -99,7 +97,7 @@ cover the common cases. Anything else goes in as a raw string: `options.raw("blu
 import { options, signUrl, srcset } from "@phron/image";
 
 const widths = [320, 640, 960, 1280];
-const value = await srcset(
+const value = srcset(
   (w) => signUrl({ label: "my-source", key, salt, options: [options.width(w)], path, expiresAt }),
   widths,
 );
@@ -145,7 +143,7 @@ signed source, build the URLs in a Server Component and pass the result down:
 // app/page.tsx (Server Component)
 import { options, roundedExpiry, signUrl, srcset } from "@phron/image";
 
-export default async function Page() {
+export default function Page() {
   const expiresAt = roundedExpiry(24 * 3600);
   const sign = (width: number) =>
     signUrl({
@@ -161,14 +159,21 @@ export default async function Page() {
   return (
     // biome-ignore lint/performance/noImgElement: pre-signed srcset
     <img
-      src={await sign(640)}
-      srcSet={await srcset(sign, [320, 640, 960, 1280])}
+      src={sign(640)}
+      srcSet={srcset(sign, [320, 640, 960, 1280])}
       sizes="(min-width: 960px) 960px, 100vw"
       alt=""
     />
   );
 }
 ```
+
+## Other languages
+
+This repository holds every Phron Image SDK. The URL format is implemented once, in the Rust
+crate [`crates/phron-image`](crates/phron-image); each language package binds it, and
+[`conformance/vectors.json`](conformance/vectors.json) pins the output every language must
+reproduce. See [docs/adr/0001-rust-core-multi-language.md](docs/adr/0001-rust-core-multi-language.md).
 
 ## License
 

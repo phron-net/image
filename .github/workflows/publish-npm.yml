@@ -1,6 +1,8 @@
-# Publish to npm with Trusted Publishing (OIDC, no token). The npm package settings must name
-# this exact repository, workflow filename (publish-npm.yml) and environment (npm-publish).
-# npm rejects self-hosted runners, so this runs on ubuntu-latest.
+# Publish @phron/image and its platform packages to npm with Trusted Publishing (OIDC, no token).
+# Each npm package's settings must name this repository, the workflow filename (publish-npm.yml)
+# and the environment (npm-publish): the root package and all seven platform packages
+# (@phron/image-<platform>). npm rejects self-hosted runners, so the publish job runs on
+# ubuntu-latest. Triggered by the `v*` tag that release.yml pushes after `sampo release`.
 name: Publish to npm
 
 on:
@@ -12,7 +14,21 @@ permissions:
   contents: read
 
 jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test -p phron-image
+
+  native:
+    needs: [rust]
+    uses: ./.github/workflows/build-native.yml
+
   publish:
+    needs: [native]
     runs-on: ubuntu-latest
     environment: npm-publish
     permissions:
@@ -29,39 +45,32 @@ jobs:
 
       # Trusted Publishing needs npm 11.5.1 or later.
       - run: npm install -g npm@^11
-
       - run: npm ci
-      - run: npx biome check .
-      - run: npx tsc --noEmit
-      - run: npx vitest run
-      - run: npm run build
+      - run: npm run build -w @phron/image
 
-      - name: Pack and inspect
+      - name: Check the tag matches the package version
         run: |
           set -euo pipefail
-          npm pack
-          tarball=$(ls -1 *.tgz)
-          echo "tarball=$tarball" >> "$GITHUB_ENV"
-          tar -tzf "$tarball" | tee /dev/stderr | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+          version=$(node -p "require('./bindings/node/package.json').version")
+          test "$GITHUB_REF_NAME" = "v$version" || { echo "tag $GITHUB_REF_NAME != v$version"; exit 1; }
 
-      - name: Install the tarball into a clean project
+      - uses: actions/download-artifact@v8
+        with:
+          path: bindings/node/artifacts
+
+      # One directory per platform package, then the downloaded binaries moved into them.
+      - name: Assemble the platform packages
+        working-directory: bindings/node
         run: |
           set -euo pipefail
-          tarball=$(ls -1 *.tgz)
-          fixture=$(mktemp -d)
-          cp "$tarball" "$fixture/"
-          cd "$fixture"
-          npm init -y >/dev/null
-          npm install "./$tarball"
-          cat > check.mjs <<'JS'
-          import { publicUrl } from "@phron/image";
-          import { signUrlSync } from "@phron/image/node";
-          import { publicLoader } from "@phron/image/next";
-          if (!publicUrl({ label: "x", preset: "p", path: "a" }).includes("/_/pr:p/")) throw new Error("bad");
-          if (typeof signUrlSync !== "function" || typeof publicLoader !== "function") throw new Error("bad");
-          console.log("clean-fixture import ok");
-          JS
-          node check.mjs
+          npx napi create-npm-dirs
+          npx napi artifacts --output-dir artifacts --npm-dir npm
+          # The loader and types are platform-independent: every build writes the same ones.
+          cp artifacts/bindings-x86_64-unknown-linux-gnu/native.cjs artifacts/bindings-x86_64-unknown-linux-gnu/native.d.cts .
+          ls npm/*
 
-      # A leading ./ keeps npm from reading the path as a git shorthand.
-      - run: npm publish "./$tarball" --access public
+      # `prepublishOnly` (`napi prepublish -t npm`) publishes the platform packages first, then
+      # npm publishes the root package, whose optionalDependencies now name them.
+      - name: Publish
+        working-directory: bindings/node
+        run: npm publish --access public
