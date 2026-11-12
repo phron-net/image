@@ -1,0 +1,67 @@
+# Publish to npm with Trusted Publishing (OIDC, no token). The npm package settings must name
+# this exact repository, workflow filename (publish-npm.yml) and environment (npm-publish).
+# npm rejects self-hosted runners, so this runs on ubuntu-latest.
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+          # Needed even for OIDC. Do not set NODE_AUTH_TOKEN: a static token would win over OIDC.
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted Publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@^11
+
+      - run: npm ci
+      - run: npx biome check .
+      - run: npx tsc --noEmit
+      - run: npx vitest run
+      - run: npm run build
+
+      - name: Pack and inspect
+        run: |
+          set -euo pipefail
+          npm pack
+          tarball=$(ls -1 *.tgz)
+          echo "tarball=$tarball" >> "$GITHUB_ENV"
+          tar -tzf "$tarball" | tee /dev/stderr | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install the tarball into a clean project
+        run: |
+          set -euo pipefail
+          tarball=$(ls -1 *.tgz)
+          fixture=$(mktemp -d)
+          cp "$tarball" "$fixture/"
+          cd "$fixture"
+          npm init -y >/dev/null
+          npm install "./$tarball"
+          cat > check.mjs <<'JS'
+          import { publicUrl } from "@phron/image";
+          import { signUrlSync } from "@phron/image/node";
+          import { publicLoader } from "@phron/image/next";
+          if (!publicUrl({ label: "x", preset: "p", path: "a" }).includes("/_/pr:p/")) throw new Error("bad");
+          if (typeof signUrlSync !== "function" || typeof publicLoader !== "function") throw new Error("bad");
+          console.log("clean-fixture import ok");
+          JS
+          node check.mjs
+
+      # A leading ./ keeps npm from reading the path as a git shorthand.
+      - run: npm publish "./$tarball" --access public

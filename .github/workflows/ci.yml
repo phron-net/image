@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npx biome check .
+      - run: npx tsc --noEmit
+      - run: npx vitest run
+      - name: Pack and list the tarball
+        run: |
+          set -euo pipefail
+          npm pack
+          tar -tzf ./*.tgz
+
+      - name: Install the tarball into a clean project
+        run: |
+          set -euo pipefail
+          tarball=$(ls -1 *.tgz)
+          fixture=$(mktemp -d)
+          cp "$tarball" "$fixture/"
+          cd "$fixture"
+          npm init -y >/dev/null
+          npm install "./$tarball"
+          cat > check.mjs <<'JS'
+          import { publicUrl } from "@phron/image";
+          import { signUrlSync } from "@phron/image/node";
+          import { publicLoader } from "@phron/image/next";
+          if (!publicUrl({ label: "x", preset: "p", path: "a" }).includes("/_/pr:p/")) throw new Error("bad");
+          if (typeof signUrlSync !== "function" || typeof publicLoader !== "function") throw new Error("bad");
+          console.log("clean-fixture import ok");
+          JS
+          node check.mjs
