@@ -178,7 +178,7 @@ fn build_path(options: &[String], path: &str, format: Option<&str>) -> String {
 /// Decode a hex string (the form keys and salts are shown in).
 fn decode_hex(hex: &str) -> Result<Vec<u8>> {
     let bytes = hex.as_bytes();
-    if bytes.len() % 2 != 0 {
+    if !bytes.len().is_multiple_of(2) {
         return Err(Error::invalid("expected a hex string"));
     }
     let nibble = |b: u8| -> Result<u8> {
