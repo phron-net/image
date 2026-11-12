@@ -26,7 +26,9 @@ and a version in step with the npm package).
 - **npm Trusted Publisher, eight times:** `@phron/image` and `@phron/image-linux-x64-gnu`,
   `-linux-arm64-gnu`, `-linux-x64-musl`, `-linux-arm64-musl`, `-darwin-x64`, `-darwin-arm64`,
   `-win32-x64-msvc`. For each: repository `phron-net/image`, workflow `publish-npm.yml`,
-  environment `npm-publish`. A name that does not exist yet takes a _pending_ publisher
-  (npmjs.com, account, Trusted Publishers). The match is by exact string; a mismatch is a bare
-  403/404.
+  environment `npm-publish`. Set under npmjs.com, Packages, the package, Settings, Trusted
+  publishing, so the package must already exist: npm's docs (checked 2026-11-12) describe no
+  pending publisher for a free name, so a name is claimed once by a first manual publish. A new
+  configuration expires unless its first publish succeeds within 2 days, so set it just before
+  the first tag. The match is by exact string; a mismatch is a bare 403/404.
 - **First publish** waits for the first CI run on `main` to be green.
