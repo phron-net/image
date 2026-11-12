@@ -14,10 +14,10 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phron-net/image-js.git"
+    "url": "git+https://github.com/phron-net/image.git"
   },
-  "homepage": "https://github.com/phron-net/image-js#readme",
-  "bugs": "https://github.com/phron-net/image-js/issues",
+  "homepage": "https://github.com/phron-net/image#readme",
+  "bugs": "https://github.com/phron-net/image/issues",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
