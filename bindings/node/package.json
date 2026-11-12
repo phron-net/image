@@ -1,6 +1,6 @@
 {
   "name": "@phron/image",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Build and sign Phron Image URLs. A Rust core, bound through napi-rs: native on Linux x64, WebAssembly everywhere else.",
   "keywords": [
     "phron",
