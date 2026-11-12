@@ -47,7 +47,74 @@ jobs:
       - name: Package contents
         run: npm pack -w @phron/image --dry-run
 
-  # Every platform package: proves the binding compiles on each target.
+  # The WebAssembly fallback: the same vectors in Node through WASI, then inside workerd.
+  wasm:
+    needs: [rust]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm32-wasip1
+      - run: npm ci
+      - name: Build the wasm32-wasip1 target
+        working-directory: bindings/node
+        run: |
+          npx napi build --platform --target wasm32-wasip1 --js native.cjs --dts native.d.cts
+          ls -la
+      # `error` makes the loader throw if no WASI binding exists, so a native load cannot pass
+      # for the WebAssembly one.
+      - name: Vectors in Node through WebAssembly
+        run: npm test -w @phron/image
+        env:
+          NAPI_RS_FORCE_WASI: error
+      - name: Vectors in workerd
+        working-directory: bindings/node
+        run: node tests/workerd/run.mjs
+
+  # Both napi targets, as the publish workflow builds them.
   native:
     needs: [rust]
     uses: ./.github/workflows/build-native.yml
+
+  # The release layout, assembled as publish-npm.yml does it, then a prepublish dry run and the
+  # contents of every package that would be published. Nothing is published.
+  package:
+    needs: [native]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          path: bindings/node/artifacts
+      - name: Assemble the platform packages
+        working-directory: bindings/node
+        run: |
+          set -euo pipefail
+          npx napi create-npm-dirs
+          npx napi artifacts --output-dir artifacts --npm-dir npm
+          cp artifacts/bindings-x86_64-unknown-linux-gnu/native.cjs artifacts/bindings-x86_64-unknown-linux-gnu/native.d.cts .
+          npm run build
+      - name: Prepublish dry run
+        working-directory: bindings/node
+        run: npx napi prepublish -t npm --no-gh-release --dry-run
+      - name: Package contents
+        working-directory: bindings/node
+        run: |
+          set -euo pipefail
+          for dir in npm/*/ .; do
+            echo "::group::$dir"
+            cat "$dir/package.json"
+            (cd "$dir" && npm pack --dry-run)
+            echo "::endgroup::"
+          done

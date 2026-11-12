@@ -1,7 +1,7 @@
 {
   "name": "@phron/image",
   "version": "0.1.0",
-  "description": "Build and sign Phron Image URLs. A Rust core, bound to Node.js through napi-rs.",
+  "description": "Build and sign Phron Image URLs. A Rust core, bound through napi-rs: native on Linux x64, WebAssembly everywhere else.",
   "keywords": [
     "phron",
     "image",
@@ -45,13 +45,11 @@
     "binaryName": "phron-image",
     "targets": [
       "x86_64-unknown-linux-gnu",
-      "aarch64-unknown-linux-gnu",
-      "x86_64-unknown-linux-musl",
-      "aarch64-unknown-linux-musl",
-      "x86_64-apple-darwin",
-      "aarch64-apple-darwin",
-      "x86_64-pc-windows-msvc"
-    ]
+      "wasm32-wasip1"
+    ],
+    "wasm": {
+      "cpu": false
+    }
   },
   "publishConfig": {
     "access": "public",
@@ -63,11 +61,17 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepublishOnly": "napi prepublish -t npm"
+    "prepublishOnly": "napi prepublish -t npm --no-gh-release"
   },
   "devDependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
     "@napi-rs/cli": "^3.10.12",
+    "@napi-rs/wasm-runtime": "^1.2.7",
     "@types/node": "^22.0.0",
+    "emnapi": "^1.11.3",
+    "esbuild": "^0.28.2",
+    "miniflare": "^4.20260730.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }
