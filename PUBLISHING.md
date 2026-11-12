@@ -11,10 +11,12 @@ once, because the registries have no API for it.
    `bindings/node/package.json` and `CHANGELOG.md`, the workflow commits that and pushes the
    `v<version>` tag, then dispatches `publish-npm.yml` on it (a tag pushed with `GITHUB_TOKEN`
    triggers nothing, a `workflow_dispatch` does; no GitHub App key is involved).
-3. `publish-npm.yml` runs on that tag: Rust checks, the seven-target build (`build-native.yml`),
-   then `napi create-npm-dirs` and `napi artifacts` assemble the platform packages, and
-   `npm publish` of `@phron/image` publishes them first (`prepublishOnly: napi prepublish -t npm`)
-   and the root package last. The job runs on `ubuntu-latest` because npm refuses self-hosted
+3. `publish-npm.yml` runs on that tag: Rust checks, the two-target build (`build-native.yml`:
+   Linux x64 native and `wasm32-wasip1`), then `napi create-npm-dirs` and `napi artifacts`
+   assemble `@phron/image-linux-x64-gnu` and `@phron/image-wasm32-wasip1`, and `npm publish` of
+   `@phron/image` publishes them first (`prepublishOnly: napi prepublish -t npm
+   --no-gh-release`) and the root package last. CI's `package` job runs the same assembly and a
+   prepublish dry run on every push. The job runs on `ubuntu-latest` because npm refuses self-hosted
    runners for provenance.
 
 The Rust crates (`phron-image`, `phron-image-node`) are listed under `ignore` in
@@ -23,9 +25,8 @@ and a version in step with the npm package).
 
 ## One-time gates (a person with the registry account and 2FA)
 
-- **npm Trusted Publisher, eight times:** `@phron/image` and `@phron/image-linux-x64-gnu`,
-  `-linux-arm64-gnu`, `-linux-x64-musl`, `-linux-arm64-musl`, `-darwin-x64`, `-darwin-arm64`,
-  `-win32-x64-msvc`. For each: repository `phron-net/image`, workflow `publish-npm.yml`,
+- **npm Trusted Publisher, three times:** `@phron/image`, `@phron/image-linux-x64-gnu` and
+  `@phron/image-wasm32-wasip1`. For each: repository `phron-net/image`, workflow `publish-npm.yml`,
   environment `npm-publish`. Set under npmjs.com, Packages, the package, Settings, Trusted
   publishing, so the package must already exist: npm's docs (checked 2026-11-12) describe no
   pending publisher for a free name, so a name is claimed once by a first manual publish. A new

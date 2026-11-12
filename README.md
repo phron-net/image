@@ -2,12 +2,13 @@
 
 Build and sign [Phron Image](https://phron.net) URLs from TypeScript and JavaScript.
 
-- One Rust implementation of the URL format, bound to Node.js (20+) through napi-rs: prebuilt
-  binaries for Linux (glibc and musl, x64 and arm64), macOS (x64 and arm64) and Windows x64.
-  No install-time compile.
-- Node only for now: the signing code does not run in browsers or on edge runtimes (Cloudflare
-  Workers, Vercel Edge, Deno Deploy). `@phron/image/next` is the exception: it builds public
-  URLs in plain TypeScript and runs in the browser.
+- One Rust implementation of the URL format, bound through napi-rs. On Linux x64 (glibc),
+  Node.js (20+) loads a prebuilt native binary. Everywhere else (macOS, arm64, Alpine, Windows)
+  it loads the same Rust code compiled to WebAssembly, with the same API and results. No
+  install-time compile.
+- Cloudflare Workers: supported through the WebAssembly build (see below). Vercel Edge and Deno
+  Deploy are not tested yet. `@phron/image/next` builds public URLs in plain TypeScript and runs
+  in the browser.
 - Signed URLs, unsigned public URLs, API URLs, `srcset`, and a Next.js loader for public sources.
 
 ```sh
@@ -166,6 +167,31 @@ export default function Page() {
     />
   );
 }
+```
+
+## Cloudflare Workers
+
+Workers cannot load a native binary, so they use the WebAssembly build. Import the module and
+instantiate it once; the functions are the same Rust core (`signUrl`, `publicUrl`, `apiUrl`,
+`infoUrl`, and `optionWidth`, `optionQuality` and so on for the option helpers):
+
+```ts
+import wasm from "@phron/image/wasm";
+import { instantiate } from "@phron/image/workerd";
+
+export default {
+  async fetch(_req: Request, env: { PHRON_KEY: string; PHRON_SALT: string }) {
+    const image = await instantiate(wasm); // resolves to the same instance after the first call
+    const url = image.signUrl({
+      key: env.PHRON_KEY,
+      salt: env.PHRON_SALT,
+      baseUrl: "https://acme.phronusercontent.com",
+      options: ["w:640"],
+      path: "photos/cat.jpg",
+    });
+    return Response.json({ url });
+  },
+};
 ```
 
 ## Other languages

@@ -25,12 +25,22 @@ language means a second place for a signing bug.
 
 ## Consequences
 
-- The Node package needs a native binary per platform (seven platform packages, optional
-  dependencies of `@phron/image`). A platform outside that list cannot install it.
-- **Edge runtimes and browsers are not served by the addon.** The earlier pure-TypeScript package
-  ran on Cloudflare Workers, Vercel Edge and Deno Deploy through Web Crypto; the addon does not.
-  The one browser-side entry, the Next.js `publicLoader`, is plain TypeScript, pinned to the core
-  by the `public` conformance vectors. This is a known gap: the intended fix is a WebAssembly
-  build of the same Rust core (wasm-bindgen) as a second target of `@phron/image`, which then
-  also retires the loader's own URL builder. Nothing has been published, so no user lost anything.
+- **Two napi targets, decided 2026-11-12.** napi-rs builds the binding twice from one crate:
+  native for `x86_64-unknown-linux-gnu`, where servers run and speed matters, and threadless
+  WebAssembly (`wasm32-wasip1`) for every other host. Each native target would be one more npm
+  platform package and trusted publisher, so other platforms take the WebAssembly build instead
+  of their own binaries. The release is three npm packages: `@phron/image`,
+  `@phron/image-linux-x64-gnu` and `@phron/image-wasm32-wasip1`. The WebAssembly package has
+  no `cpu` restriction (`napi.wasm.cpu: false`), so it installs everywhere and the Node loader
+  falls back to it when no native binary loads.
+- **No second binding.** wasm-bindgen was considered and rejected: it is a second binding to
+  keep in step with the napi one (napi-rs v3 announcement, "Why don't use wasm-bindgen
+  instead"). No language package is written by hand.
+- **Cloudflare Workers** run the WebAssembly build through napi-rs's deferred workerd loader
+  (`@phron/image/workerd` with `@phron/image/wasm`), which takes a precompiled
+  `WebAssembly.Module` because Workers forbid compiling WebAssembly from bytes. CI runs the
+  vectors inside workerd. Vercel Edge and Deno Deploy are not tested yet, so they are not
+  claimed.
+- The Next.js `publicLoader` is plain TypeScript, pinned to the core by the `public`
+  conformance vectors; it is retired once the browser entry of the WebAssembly build serves it.
 - `signUrl` is synchronous (it was async over Web Crypto), and the `./node` subpath is gone.
