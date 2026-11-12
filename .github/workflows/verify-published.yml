@@ -1,0 +1,88 @@
+# Installs @phron/image from the npm registry, as a user would, and runs the conformance vectors:
+# natively on Linux x64, through the WebAssembly fallback with the native package removed, and in
+# workerd through the published `./wasm` and `./workerd` exports (which `napi prepublish` writes
+# only at publish time, so CI's dry run never has them). publish-npm.yml calls this after each
+# publish; dispatch it by hand to re-check a version.
+name: Verify published packages
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to install, with or without a leading v"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to install, with or without a leading v"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      # Outside the checkout, so the workspace's own @phron/image cannot shadow the registry copy.
+      - name: Install from the registry
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/published"
+          mkdir -p "$dir" && cd "$dir"
+          npm init -y >/dev/null
+          # A version published seconds ago can take a minute to reach every registry mirror.
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            npm i "@phron/image@${VERSION#v}" && break
+            [ "$i" = 10 ] && exit 1
+            sleep 30
+          done
+          cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/node.mjs .
+          ls node_modules/@phron
+          test -f node_modules/@phron/image/README.md || { echo "no README in the package"; exit 1; }
+      - name: Native (Linux x64)
+        working-directory: ${{ runner.temp }}/published
+        run: node node.mjs native "$GITHUB_WORKSPACE/conformance/vectors.json"
+      - name: WebAssembly fallback (native package removed)
+        working-directory: ${{ runner.temp }}/published
+        run: |
+          rm -rf node_modules/@phron/image-linux-x64-gnu
+          node node.mjs wasm "$GITHUB_WORKSPACE/conformance/vectors.json"
+
+  workerd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+      # esbuild and miniflare for tests/workerd/run.mjs.
+      - run: npm ci
+      - name: Install from the registry
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/published"
+          mkdir -p "$dir" && cd "$dir"
+          npm init -y >/dev/null
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            npm i "@phron/image@${VERSION#v}" && break
+            [ "$i" = 10 ] && exit 1
+            sleep 30
+          done
+          cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/worker.mjs "$GITHUB_WORKSPACE"/conformance/vectors.json .
+      - name: README Workers snippet in workerd
+        run: node bindings/node/tests/workerd/run.mjs "$RUNNER_TEMP/published/worker.mjs"

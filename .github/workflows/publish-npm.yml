@@ -81,3 +81,10 @@ jobs:
       - name: Publish
         working-directory: bindings/node
         run: npm publish --access public
+
+  # Install what was just published and run the vectors natively, through WASM, and in workerd.
+  verify:
+    needs: [publish]
+    uses: ./.github/workflows/verify-published.yml
+    with:
+      version: ${{ github.ref_name }}
