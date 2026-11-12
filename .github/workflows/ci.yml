@@ -68,12 +68,16 @@ jobs:
         run: |
           npx napi build --platform --target wasm32-wasip1 --js native.cjs --dts native.d.cts
           ls -la
-      # `error` makes the loader throw if no WASI binding exists, so a native load cannot pass
-      # for the WebAssembly one.
+      # Only the WebAssembly build exists here (no .node file, no platform package), so the
+      # loader can only succeed through WASI. NAPI_RS_FORCE_WASI is not used: it is process-wide,
+      # and vitest's own napi-rs bundler (rolldown) obeys it too and fails to start.
       - name: Vectors in Node through WebAssembly
-        run: npm test -w @phron/image
-        env:
-          NAPI_RS_FORCE_WASI: error
+        run: |
+          set -euo pipefail
+          if ls bindings/node/*.node node_modules/@phron/image-linux-* >/dev/null 2>&1; then
+            echo "a native binding is present; this job must test WebAssembly only"; exit 1
+          fi
+          npm test -w @phron/image
       - name: Vectors in workerd
         working-directory: bindings/node
         run: node tests/workerd/run.mjs
