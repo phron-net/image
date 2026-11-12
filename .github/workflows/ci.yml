@@ -24,10 +24,6 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       # The core crate, including the shared conformance vectors.
       - run: cargo test -p phron-image
-      - uses: actions/upload-artifact@v7
-        with:
-          name: lockfile
-          path: Cargo.lock
 
   node:
     needs: [rust]

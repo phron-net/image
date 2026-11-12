@@ -30,5 +30,4 @@ and a version in step with the npm package).
   403/404.
 - **Release secret:** `PROTOS_APP_PRIVATE_KEY` on `phron-net/image`, projected declaratively
   (the `gha-ci` and `cp-github` skills), so `release.yml` can push the tag as the App.
-- **First publish** waits for the first CI run on `main` to be green and for the lock file
-  (`Cargo.lock`) to be committed.
+- **First publish** waits for the first CI run on `main` to be green.
