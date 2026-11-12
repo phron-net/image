@@ -11,5 +11,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["ts", "tests"]
+  "include": ["ts", "tests"],
+  "exclude": ["tests/published"]
 }

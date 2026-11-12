@@ -6,9 +6,10 @@ Build and sign [Phron Image](https://phron.net) URLs from TypeScript and JavaScr
   Node.js (20+) loads a prebuilt native binary. Everywhere else (macOS, arm64, Alpine, Windows)
   it loads the same Rust code compiled to WebAssembly, with the same API and results. No
   install-time compile.
-- Cloudflare Workers: supported through the WebAssembly build (see below). Vercel Edge and Deno
-  Deploy are not tested yet. `@phron/image/next` builds public URLs in plain TypeScript and runs
-  in the browser.
+- Edge runtimes use the WebAssembly build (see below). After each release, CI installs the
+  package from npm and runs the shared test vectors in workerd (Cloudflare Workers), in Deno, and
+  in Vercel's Edge Runtime emulator. It has not yet run on a Deno Deploy or Vercel deployment.
+  `@phron/image/next` builds public URLs in plain TypeScript and runs in the browser.
 - Signed URLs, unsigned public URLs, API URLs, `srcset`, and a Next.js loader for public sources.
 
 ```sh
@@ -192,6 +193,27 @@ export default {
     return Response.json({ url });
   },
 };
+```
+
+## Deno and Vercel Edge
+
+The same two imports work, with the WebAssembly module loaded the way each runtime expects:
+
+```ts
+// Deno: a source-phase import gives the compiled module. Use `./wasm.wasm`, because Deno picks
+// the module type from the file extension.
+import source wasm from "npm:@phron/image/wasm.wasm";
+import { instantiate } from "npm:@phron/image/workerd";
+
+const image = await instantiate(wasm);
+```
+
+```ts
+// Vercel Edge: Vercel compiles a `?module` import of a .wasm file to a WebAssembly.Module.
+import wasm from "@phron/image/wasm.wasm?module";
+import { instantiate } from "@phron/image/workerd";
+
+const image = await instantiate(wasm);
 ```
 
 ## Other languages

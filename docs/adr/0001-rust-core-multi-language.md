@@ -39,8 +39,10 @@ language means a second place for a signing bug.
 - **Cloudflare Workers** run the WebAssembly build through napi-rs's deferred workerd loader
   (`@phron/image/workerd` with `@phron/image/wasm`), which takes a precompiled
   `WebAssembly.Module` because Workers forbid compiling WebAssembly from bytes. CI runs the
-  vectors inside workerd. Vercel Edge and Deno Deploy are not tested yet, so they are not
-  claimed.
+  vectors inside workerd. The same loader serves Deno (a source-phase import of `./wasm.wasm`)
+  and Vercel Edge (a `?module` import). `verify-published.yml` runs the vectors against the
+  package installed from npm in workerd, Deno 2.9 and Vercel's `edge-runtime` emulator after
+  each publish; a live Deno Deploy or Vercel deployment is not tested.
 - The Next.js `publicLoader` is plain TypeScript, pinned to the core by the `public`
   conformance vectors; it is retired once the browser entry of the WebAssembly build serves it.
 - `signUrl` is synchronous (it was async over Web Crypto), and the `./node` subpath is gone.
