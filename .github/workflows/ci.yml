@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ["20", "22"]
+        node: ["22", "24"]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -78,9 +78,20 @@ jobs:
             echo "a native binding is present; this job must test WebAssembly only"; exit 1
           fi
           npm test -w @phron/image
+      - name: Type-check the workerd test against the build
+        working-directory: bindings/node
+        run: npx tsc -p tests/workerd
       - name: Vectors in workerd
         working-directory: bindings/node
-        run: node tests/workerd/run.mjs
+        run: node tests/workerd/run.ts
+      # The vectors come from an implementation that shares no code with the binding; the
+      # committed file must be exactly what it writes.
+      - name: Conformance vectors are current
+        run: |
+          set -euo pipefail
+          npx tsc -p conformance
+          npm run conformance:generate
+          git diff --exit-code conformance/vectors.json
 
   # Both napi targets, as the publish workflow builds them.
   native:

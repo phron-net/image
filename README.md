@@ -3,7 +3,7 @@
 Build and sign [Phron Image](https://phron.net) URLs from TypeScript and JavaScript.
 
 - One Rust implementation of the URL format, bound through napi-rs. On Linux x64 (glibc),
-  Node.js (20+) loads a prebuilt native binary. Everywhere else (macOS, arm64, Alpine, Windows)
+  Node.js (22.18+) loads a prebuilt native binary. Everywhere else (macOS, arm64, Alpine, Windows)
   it loads the same Rust code compiled to WebAssembly, with the same API and results. No
   install-time compile.
 - Edge runtimes use the WebAssembly build (see below). After each release, CI installs the
@@ -200,11 +200,14 @@ export default {
 The same two imports work, with the WebAssembly module loaded the way each runtime expects:
 
 ```ts
-// Deno: a source-phase import gives the compiled module. Use `./wasm.wasm`, because Deno picks
-// the module type from the file extension.
-import source wasm from "npm:@phron/image/wasm.wasm";
-import { instantiate } from "npm:@phron/image/workerd";
+// Deno, with "nodeModulesDir": "auto" in deno.json and an import map entry
+// "@phron/image/": "npm:/@phron/image@<version>/". Deno may compile WebAssembly from bytes, so
+// read the module from node_modules (run with --allow-read).
+import { instantiate } from "@phron/image/workerd";
 
+const wasm = await WebAssembly.compile(
+  await Deno.readFile(new URL(import.meta.resolve("@phron/image/wasm.wasm"))),
+);
 const image = await instantiate(wasm);
 ```
 

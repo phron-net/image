@@ -1,8 +1,10 @@
-# Installs @phron/image from the npm registry, as a user would, and runs the conformance vectors:
-# natively on Linux x64, through the WebAssembly fallback with the native package removed, and in
-# workerd, Deno and Vercel's edge-runtime through the published `./wasm` and `./workerd` exports
-# (which `napi prepublish` writes only at publish time, so CI's dry run never has them). publish-npm.yml calls this after each
-# publish; dispatch it by hand to re-check a version.
+# Installs @phron/image from the npm registry, as a user would, type-checks the test scripts
+# against it, and runs the conformance vectors: natively on Linux x64, through the WebAssembly
+# fallback with the native package removed, and in workerd, Deno and Vercel's edge-runtime
+# through the published `./wasm` and `./workerd` exports (which `napi prepublish` writes only at
+# publish time, so CI's dry run never has them). publish-npm.yml calls this after each publish;
+# dispatch it by hand to re-check a version. The scripts are TypeScript, run directly by Node
+# 22.18+ and Deno.
 name: Verify published packages
 
 on:
@@ -28,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["20", "22"]
+        node: ["22", "24"]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -43,6 +45,7 @@ jobs:
           dir="$RUNNER_TEMP/published"
           mkdir -p "$dir" && cd "$dir"
           npm init -y >/dev/null
+          npm pkg set type=module
           # A version published seconds ago can take a minute to reach every registry mirror, and npm
           # caches the version list: --prefer-online refetches it on each try.
           for i in 1 2 3 4 5 6 7 8 9 10; do
@@ -50,17 +53,22 @@ jobs:
             [ "$i" = 10 ] && exit 1
             sleep 30
           done
-          cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/node.mjs .
+          npm i -D typescript@^7.0.2 @types/node@^22
+          cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{node.ts,tsconfig.json} .
           ls node_modules/@phron
           test -f node_modules/@phron/image/README.md || { echo "no README in the package"; exit 1; }
+      - name: Type-check against the published types
+        working-directory: ${{ runner.temp }}/published
+        # tsconfig.json lists node.ts, edge.ts and worker.ts; tsc skips the ones not copied here.
+        run: npx tsc -p .
       - name: Native (Linux x64)
         working-directory: ${{ runner.temp }}/published
-        run: node node.mjs native "$GITHUB_WORKSPACE/conformance/vectors.json"
+        run: node node.ts native "$GITHUB_WORKSPACE/conformance/vectors.json"
       - name: WebAssembly fallback (native package removed)
         working-directory: ${{ runner.temp }}/published
         run: |
           rm -rf node_modules/@phron/image-linux-x64-gnu
-          node node.mjs wasm "$GITHUB_WORKSPACE/conformance/vectors.json"
+          node node.ts wasm "$GITHUB_WORKSPACE/conformance/vectors.json"
 
   # The WebAssembly build through the `./workerd` loader with a precompiled module, in each edge
   # runtime the README names.
@@ -74,7 +82,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.8
-      # esbuild and miniflare for tests/workerd/run.mjs.
+      # esbuild and miniflare for tests/workerd/run.ts.
       - run: npm ci
       - name: Install from the registry
         env:
@@ -84,18 +92,23 @@ jobs:
           dir="$RUNNER_TEMP/published"
           mkdir -p "$dir" && cd "$dir"
           npm init -y >/dev/null
+          npm pkg set type=module
           for i in 1 2 3 4 5 6 7 8 9 10; do
             npm i --prefer-online "@phron/image@${VERSION#v}" esbuild@0.28.2 edge-runtime@4.0.1 && break
             [ "$i" = 10 ] && exit 1
             sleep 30
           done
-          cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{worker.mjs,deno.ts,edge.mjs} \
+          npm i -D typescript@^7.0.2 @types/node@^22
+          cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{worker.ts,deno.ts,edge.ts,tsconfig.json} \
             "$GITHUB_WORKSPACE"/conformance/vectors.json .
-      - name: Cloudflare Workers (workerd), the README snippet
-        run: node bindings/node/tests/workerd/run.mjs "$RUNNER_TEMP/published/worker.mjs"
-      - name: Deno
+      - name: Type-check against the published types
         working-directory: ${{ runner.temp }}/published
-        run: deno run --allow-read --allow-env deno.ts
+        run: npx tsc -p .
+      - name: Cloudflare Workers (workerd), the README snippet
+        run: node bindings/node/tests/workerd/run.ts "$RUNNER_TEMP/published/worker.ts"
+      - name: Deno (type-checked)
+        working-directory: ${{ runner.temp }}/published
+        run: deno run --check --allow-read --allow-env deno.ts
       - name: Vercel Edge (edge-runtime emulator)
         working-directory: ${{ runner.temp }}/published
-        run: node edge.mjs
+        run: node edge.ts

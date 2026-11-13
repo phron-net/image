@@ -12,5 +12,5 @@
     "noEmit": true
   },
   "include": ["ts", "tests"],
-  "exclude": ["tests/published"]
+  "exclude": ["tests/published", "tests/workerd"]
 }

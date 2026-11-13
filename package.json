@@ -1,6 +1,7 @@
 {
   "name": "phron-image-workspace",
   "private": true,
+  "type": "module",
   "description": "npm workspace root for phron-net/image; the published package is bindings/node (@phron/image).",
   "workspaces": [
     "bindings/node"
@@ -10,6 +11,6 @@
   },
   "scripts": {
     "lint": "biome check .",
-    "conformance:generate": "node conformance/generate.mjs"
+    "conformance:generate": "node conformance/generate.ts && biome format --write conformance/vectors.json"
   }
 }

@@ -1,0 +1,19 @@
+{
+  // Type-checks these scripts against @phron/image as installed from npm. verify-published.yml
+  // copies this file beside them in the install directory and runs `tsc -p .` there. Deno
+  // checks deno.ts itself (`deno run --check`).
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["node.ts", "edge.ts", "worker.ts"]
+}

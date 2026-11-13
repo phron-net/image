@@ -39,7 +39,7 @@
     "native.d.cts"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.18.0"
   },
   "napi": {
     "binaryName": "phron-image",

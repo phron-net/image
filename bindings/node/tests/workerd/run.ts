@@ -1,8 +1,8 @@
-// Bundles worker.mjs the way wrangler does (esbuild, `.wasm` kept as a module import), runs it
+// Bundles worker.ts the way wrangler does (esbuild, `.wasm` kept as a module import), runs it
 // in workerd through miniflare, and fails unless every conformance vector passed.
 // Needs the wasm32-wasip1 build in bindings/node (`napi build --target wasm32-wasip1`).
-// `node run.mjs <worker.mjs>` runs another worker instead (verify-published.yml passes
-// ../published/worker.mjs, copied beside an installed @phron/image).
+// `node run.ts <worker.ts>` runs another worker instead (verify-published.yml passes
+// ../published/worker.ts, copied beside an installed @phron/image).
 import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,7 +10,7 @@ import { build } from "esbuild";
 import { Miniflare } from "miniflare";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const entry = process.argv[2] ? resolve(process.argv[2]) : join(here, "worker.mjs");
+const entry = process.argv[2] ? resolve(process.argv[2]) : join(here, "worker.ts");
 const outdir = join(dirname(entry), "dist");
 mkdirSync(outdir, { recursive: true });
 

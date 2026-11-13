@@ -1,0 +1,14 @@
+{
+  // Type-checks generate.ts (CI's wasm job). Node 22.18+ runs it directly.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["generate.ts"]
+}

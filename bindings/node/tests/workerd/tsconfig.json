@@ -1,0 +1,20 @@
+{
+  // worker.ts imports the wasm32-wasip1 build's loader and module, which exist only after
+  // `napi build --target wasm32-wasip1`, so CI's wasm job type-checks these files after that
+  // build (`tsc -p tests/workerd`). Bundler resolution, as esbuild bundles worker.ts; it also
+  // finds napi's `<name>.wasm.d.ts` for the `.wasm` import.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["run.ts", "worker.ts"]
+}
