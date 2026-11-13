@@ -48,13 +48,7 @@ jobs:
           mkdir -p "$dir" && cd "$dir"
           npm init -y >/dev/null
           npm pkg set type=module
-          # npm publishes asynchronously ("Your package is being processed"): 0.2.0 appeared about
-          # seven minutes after `npm publish` returned. Wait up to 20 minutes for the version.
-          for i in $(seq 1 40); do
-            npm view "@phron/image@${VERSION#v}" version --prefer-online 2>/dev/null | grep -q . && break
-            [ "$i" = 40 ] && { echo "@phron/image@${VERSION#v} not on npm after 20 minutes"; exit 1; }
-            sleep 30
-          done
+          bash "$GITHUB_WORKSPACE/.github/scripts/wait-for-npm.sh" "${VERSION#v}"
           npm i --prefer-online "@phron/image@${VERSION#v}"
           npm i -D typescript@7.1.0-beta @types/node@^26.6.6
           cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{node.ts,tsconfig.json} .
@@ -96,11 +90,7 @@ jobs:
           mkdir -p "$dir" && cd "$dir"
           npm init -y >/dev/null
           npm pkg set type=module
-          for i in $(seq 1 40); do
-            npm view "@phron/image@${VERSION#v}" version --prefer-online 2>/dev/null | grep -q . && break
-            [ "$i" = 40 ] && { echo "@phron/image@${VERSION#v} not on npm after 20 minutes"; exit 1; }
-            sleep 30
-          done
+          bash "$GITHUB_WORKSPACE/.github/scripts/wait-for-npm.sh" "${VERSION#v}"
           npm i --prefer-online "@phron/image@${VERSION#v}" esbuild@0.28.2 edge-runtime@4.0.1
           npm i -D typescript@7.1.0-beta @types/node@^26.6.6
           cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{worker.ts,deno.ts,edge.ts,tsconfig.json} \
