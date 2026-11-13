@@ -19,7 +19,7 @@ await build({
   bundle: true,
   format: "esm",
   platform: "neutral",
-  target: "es2022",
+  target: "es2025",
   conditions: ["workerd", "worker", "browser"],
   mainFields: ["module", "main"],
   outdir,
@@ -30,13 +30,15 @@ await build({
   logLevel: "warning",
 });
 
+// Miniflare 4, the latest stable: the 5.x pre-release (5.20261110.2-beta, 2026-11-13) replaced
+// these options with an undocumented `workers[].config` schema.
 const mf = new Miniflare({
   modules: true,
   scriptPath: join(outdir, "worker.js"),
   // Module names are relative to this root; the default (the cwd) breaks a bundle outside it.
   modulesRoot: outdir,
   modulesRules: [{ type: "CompiledWasm", include: ["**/*.wasm"] }],
-  compatibilityDate: "2026-08-01",
+  compatibilityDate: "2026-07-30",
   compatibilityFlags: ["nodejs_compat"],
 });
 

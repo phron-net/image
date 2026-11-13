@@ -13,11 +13,11 @@ crate-type = ["cdylib"]
 
 [dependencies]
 phron-image = { path = "../../crates/phron-image" }
-napi = { version = "3", default-features = false, features = ["napi8"] }
-napi-derive = "3"
+napi = { version = "3.16.2", default-features = false, features = ["napi8"] }
+napi-derive = "3.7.1"
 
 [build-dependencies]
-napi-build = "2"
+napi-build = "2.6.0"
 
 # The `#[napi]` macro emits `#[allow(unsafe_code)]` on its generated FFI symbols, which a
 # workspace-level `forbid` would reject. `deny` keeps hand-written code free of `unsafe`.

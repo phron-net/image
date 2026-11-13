@@ -34,7 +34,7 @@ const out = await build({
   bundle: true,
   format: "iife",
   platform: "neutral",
-  target: "es2022",
+  target: "es2025",
   conditions: ["edge-light", "worker", "browser"],
   mainFields: ["module", "main"],
   write: false,

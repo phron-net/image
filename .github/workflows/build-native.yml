@@ -31,11 +31,11 @@ jobs:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "26"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.3
         with:
           key: ${{ matrix.target }}
       - run: npm ci
@@ -62,7 +62,7 @@ jobs:
           [ "$(printf '%s\n2.17\n' "$newest" | sort -V | tail -1)" = "2.17" ] || { echo "needs glibc $newest > 2.17"; exit 1; }
       # Everything napi generated for the target: the binary or .wasm, the WASI loaders
       # (phron-image.wasip1*.{cjs,js}) and the platform-independent loader and types.
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: bindings-${{ matrix.target }}
           path: |

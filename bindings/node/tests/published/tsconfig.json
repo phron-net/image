@@ -3,10 +3,10 @@
   // copies this file beside them in the install directory and runs `tsc -p .` there. Deno
   // checks deno.ts itself (`deno run --check`).
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2025",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2025", "DOM"],
     "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": true,

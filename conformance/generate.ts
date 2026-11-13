@@ -1,6 +1,6 @@
 // Regenerates vectors.json from an implementation written independently of the SDK
 // (node:crypto and encodeURIComponent, as in the customer docs). Run: node conformance/generate.ts
-// (Node 22.18 or later runs TypeScript directly).
+// (Node 26 runs TypeScript directly).
 import { createHmac } from "node:crypto";
 import { writeFileSync } from "node:fs";
 
