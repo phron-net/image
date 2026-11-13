@@ -127,7 +127,7 @@ jobs:
       - name: Vectors through the release binary
         run: |
           set -euo pipefail
-          ldd --version | head -1
+          getconf GNU_LIBC_VERSION
           ls bindings/node/*.node
           if ls bindings/node/*.wasm node_modules/@phron/image-wasm32-* >/dev/null 2>&1; then
             echo "a WebAssembly build is present; this job must test the native binary only"; exit 1
