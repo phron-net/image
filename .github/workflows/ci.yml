@@ -114,6 +114,9 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     container: node:22-bullseye
+    defaults:
+      run:
+        shell: bash # a container job's default shell is sh, which lacks pipefail
     steps:
       - uses: actions/checkout@v7.0.1
       - run: npm ci
