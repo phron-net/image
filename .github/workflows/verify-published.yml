@@ -46,13 +46,14 @@ jobs:
           mkdir -p "$dir" && cd "$dir"
           npm init -y >/dev/null
           npm pkg set type=module
-          # A version published seconds ago can take a minute to reach every registry mirror, and npm
-          # caches the version list: --prefer-online refetches it on each try.
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            npm i --prefer-online "@phron/image@${VERSION#v}" && break
-            [ "$i" = 10 ] && exit 1
+          # npm publishes asynchronously ("Your package is being processed"): 0.2.0 appeared about
+          # seven minutes after `npm publish` returned. Wait up to 20 minutes for the version.
+          for i in $(seq 1 40); do
+            npm view "@phron/image@${VERSION#v}" version --prefer-online 2>/dev/null | grep -q . && break
+            [ "$i" = 40 ] && { echo "@phron/image@${VERSION#v} not on npm after 20 minutes"; exit 1; }
             sleep 30
           done
+          npm i --prefer-online "@phron/image@${VERSION#v}"
           npm i -D typescript@^7.0.2 @types/node@^22
           cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{node.ts,tsconfig.json} .
           ls node_modules/@phron
@@ -93,11 +94,12 @@ jobs:
           mkdir -p "$dir" && cd "$dir"
           npm init -y >/dev/null
           npm pkg set type=module
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            npm i --prefer-online "@phron/image@${VERSION#v}" esbuild@0.28.2 edge-runtime@4.0.1 && break
-            [ "$i" = 10 ] && exit 1
+          for i in $(seq 1 40); do
+            npm view "@phron/image@${VERSION#v}" version --prefer-online 2>/dev/null | grep -q . && break
+            [ "$i" = 40 ] && { echo "@phron/image@${VERSION#v} not on npm after 20 minutes"; exit 1; }
             sleep 30
           done
+          npm i --prefer-online "@phron/image@${VERSION#v}" esbuild@0.28.2 edge-runtime@4.0.1
           npm i -D typescript@^7.0.2 @types/node@^22
           cp "$GITHUB_WORKSPACE"/bindings/node/tests/published/{worker.ts,deno.ts,edge.ts,tsconfig.json} \
             "$GITHUB_WORKSPACE"/conformance/vectors.json .
