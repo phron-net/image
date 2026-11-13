@@ -25,12 +25,15 @@ language means a second place for a signing bug.
 
 ## Consequences
 
-- **Two napi targets, decided 2026-11-12.** napi-rs builds the binding twice from one crate:
-  native for `x86_64-unknown-linux-gnu`, where servers run and speed matters, and threadless
-  WebAssembly (`wasm32-wasip1`) for every other host. Each native target would be one more npm
-  platform package and trusted publisher, so other platforms take the WebAssembly build instead
-  of their own binaries. The release is three npm packages: `@phron/image`,
-  `@phron/image-linux-x64-gnu` and `@phron/image-wasm32-wasip1`. The WebAssembly package has
+- **Native for the mainstream servers, WebAssembly for the rest** (decided 2026-11-12, arm64
+  added 2026-11-13). napi-rs builds one crate for `x86_64-unknown-linux-gnu` and
+  `aarch64-unknown-linux-gnu`, where servers run and speed matters, and threadless WebAssembly
+  (`wasm32-wasip1`) for every other host. Both Linux binaries are cross-compiled with
+  napi-rs's toolchain against glibc 2.17, so they load on older distributions too. Each native
+  target is one more npm platform package and trusted publisher, so other platforms take the
+  WebAssembly build. The release is four npm packages: `@phron/image`,
+  `@phron/image-linux-x64-gnu`, `@phron/image-linux-arm64-gnu` and
+  `@phron/image-wasm32-wasip1`. The WebAssembly package has
   no `cpu` restriction (`napi.wasm.cpu: false`), so it installs everywhere and the Node loader
   falls back to it when no native binary loads.
 - **No second binding.** wasm-bindgen was considered and rejected: it is a second binding to

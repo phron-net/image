@@ -1,5 +1,5 @@
 # Installs @phron/image from the npm registry, as a user would, type-checks the test scripts
-# against it, and runs the conformance vectors: natively on Linux x64, through the WebAssembly
+# against it, and runs the conformance vectors: natively on Linux x64 and arm64, through the WebAssembly
 # fallback with the native package removed, and in workerd, Deno and Vercel's edge-runtime
 # through the published `./wasm` and `./workerd` exports (which `napi prepublish` writes only at
 # publish time, so CI's dry run never has them). publish-npm.yml calls this after each publish;
@@ -26,11 +26,13 @@ permissions:
 
 jobs:
   node:
-    runs-on: ubuntu-latest
+    name: node ${{ matrix.node }} / ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         node: ["22", "24"]
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -62,13 +64,13 @@ jobs:
         working-directory: ${{ runner.temp }}/published
         # tsconfig.json lists node.ts, edge.ts and worker.ts; tsc skips the ones not copied here.
         run: npx tsc -p .
-      - name: Native (Linux x64)
+      - name: Native (this runner's Linux package)
         working-directory: ${{ runner.temp }}/published
         run: node node.ts native "$GITHUB_WORKSPACE/conformance/vectors.json"
       - name: WebAssembly fallback (native package removed)
         working-directory: ${{ runner.temp }}/published
         run: |
-          rm -rf node_modules/@phron/image-linux-x64-gnu
+          rm -rf node_modules/@phron/image-linux-*-gnu
           node node.ts wasm "$GITHUB_WORKSPACE/conformance/vectors.json"
 
   # The WebAssembly build through the `./workerd` loader with a precompiled module, in each edge

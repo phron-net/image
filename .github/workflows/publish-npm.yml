@@ -1,8 +1,8 @@
 # Publish @phron/image and its platform packages to npm with Trusted Publishing (OIDC, no token).
 # Each npm package's settings must name this repository, the workflow filename (publish-npm.yml)
-# and the environment (npm-publish): the root package, @phron/image-linux-x64-gnu and
-# @phron/image-wasm32-wasip1. npm rejects self-hosted runners, so the publish job runs on
-# ubuntu-latest. Triggered by the `v*` tag that release.yml pushes after `sampo release`.
+# and the environment (npm-publish): the root package, @phron/image-linux-x64-gnu,
+# @phron/image-linux-arm64-gnu and @phron/image-wasm32-wasip1. npm rejects self-hosted runners,
+# so the publish job runs on ubuntu-latest. Triggered by the `v*` tag that release.yml pushes after `sampo release`.
 name: Publish to npm
 
 on:

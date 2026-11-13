@@ -1,7 +1,7 @@
 {
   "name": "@phron/image",
   "version": "0.2.0",
-  "description": "Build and sign Phron Image URLs. A Rust core, bound through napi-rs: native on Linux x64, WebAssembly everywhere else.",
+  "description": "Build and sign Phron Image URLs. A Rust core, bound through napi-rs: native on Linux x64 and arm64, WebAssembly everywhere else.",
   "keywords": [
     "phron",
     "image",
@@ -45,6 +45,7 @@
     "binaryName": "phron-image",
     "targets": [
       "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
       "wasm32-wasip1"
     ],
     "wasm": {

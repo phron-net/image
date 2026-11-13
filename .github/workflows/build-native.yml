@@ -1,6 +1,11 @@
-# Builds the napi addon for both targets in napi.targets: the native Linux x64 binary and the
-# threadless WebAssembly fallback (wasm32-wasip1), which serves every other platform, Cloudflare
-# Workers and edge runtimes. Reused by ci.yml and publish-npm.yml.
+# Builds the napi addon for every target in napi.targets: native Linux x64 and arm64 binaries,
+# and the threadless WebAssembly fallback (wasm32-wasip1), which serves every other platform,
+# Cloudflare Workers and edge runtimes. Reused by ci.yml and publish-npm.yml.
+#
+# Both Linux binaries are built on one x64 runner with napi-rs's cross toolchain
+# (`--use-napi-cross`), which links against glibc 2.17. A binary built against the runner's own
+# glibc (2.39 on Ubuntu 24.04) needs GLIBC_2.34 symbols, so it fails to load on Amazon Linux 2,
+# RHEL 8, Debian 11 and Ubuntu 20.04 and those hosts fall back to WebAssembly.
 name: Build native
 
 on:
@@ -15,7 +20,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64-unknown-linux-gnu, wasm32-wasip1]
+        include:
+          - target: x86_64-unknown-linux-gnu
+            toolchain: x64-target-x86_64
+          - target: aarch64-unknown-linux-gnu
+            toolchain: x64-target-aarch64
+          - target: wasm32-wasip1
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -29,12 +39,27 @@ jobs:
         with:
           key: ${{ matrix.target }}
       - run: npm ci
+      # About 45 MB per toolchain, so installed only here rather than as devDependencies that
+      # every `npm ci` would download.
+      - name: Install the napi cross toolchain
+        if: matrix.toolchain
+        run: npm i --no-save @napi-rs/cross-toolchain@1.0.5 "@napi-rs/cross-toolchain-${{ matrix.toolchain }}@1.0.5"
       - name: Build
         working-directory: bindings/node
+        env:
+          CROSS: ${{ matrix.toolchain && '--use-napi-cross' || '' }}
         run: |
-          npx napi build --platform --release --target "${{ matrix.target }}" \
+          npx napi build --platform --release --target "${{ matrix.target }}" $CROSS \
             --js native.cjs --dts native.d.cts
           ls -la
+      - name: The binary needs glibc 2.17 at most
+        if: matrix.toolchain
+        working-directory: bindings/node
+        run: |
+          set -euo pipefail
+          newest=$(readelf -V --wide phron-image.*.node | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -V | tail -1)
+          echo "newest glibc symbol: $newest"
+          [ "$(printf '%s\n2.17\n' "$newest" | sort -V | tail -1)" = "2.17" ] || { echo "needs glibc $newest > 2.17"; exit 1; }
       # Everything napi generated for the target: the binary or .wasm, the WASI loaders
       # (phron-image.wasip1*.{cjs,js}) and the platform-independent loader and types.
       - uses: actions/upload-artifact@v7

@@ -2,10 +2,10 @@
 
 Build and sign [Phron Image](https://phron.net) URLs from TypeScript and JavaScript.
 
-- One Rust implementation of the URL format, bound through napi-rs. On Linux x64 (glibc),
-  Node.js (22.18+) loads a prebuilt native binary. Everywhere else (macOS, arm64, Alpine, Windows)
-  it loads the same Rust code compiled to WebAssembly, with the same API and results. No
-  install-time compile.
+- One Rust implementation of the URL format, bound through napi-rs. On Linux x64 and arm64
+  (glibc 2.17 or later), Node.js (22.18+) loads a prebuilt native binary. Everywhere else
+  (macOS, Windows, Alpine) it loads the same Rust code compiled to WebAssembly, with the same API
+  and results. No install-time compile.
 - Edge runtimes use the WebAssembly build (see below). After each release, CI installs the
   package from npm and runs the shared test vectors in workerd (Cloudflare Workers), in Deno, and
   in Vercel's Edge Runtime emulator. It has not yet run on a Deno Deploy or Vercel deployment.

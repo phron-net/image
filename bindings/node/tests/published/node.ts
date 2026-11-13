@@ -1,6 +1,7 @@
 // Runs the conformance vectors against @phron/image as installed from the npm registry (not the
 // repo build). Usage: node node.ts <native|wasm> <vectors.json>
-// native: the Linux x64 platform package must be installed and load on its own.
+// native: this machine's Linux platform package (x64 or arm64) must be installed and load on its
+// own.
 // wasm: it must be absent, so the loader falls back to @phron/image-wasm32-wasip1.
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -31,12 +32,13 @@ const has = (name: string): boolean => {
   }
 };
 
+const nativePackage = `@phron/image-linux-${process.arch}-gnu`;
 if (mode === "native") {
-  if (!has("@phron/image-linux-x64-gnu")) throw new Error("native package not installed");
+  if (!has(nativePackage)) throw new Error(`${nativePackage} not installed`);
   // Loads the .node file directly: a broken binary throws here rather than silently falling back.
-  require("@phron/image-linux-x64-gnu");
+  require(nativePackage);
 } else if (mode === "wasm") {
-  if (has("@phron/image-linux-x64-gnu")) throw new Error("native package still installed");
+  if (has(nativePackage)) throw new Error(`${nativePackage} still installed`);
   if (!has("@phron/image-wasm32-wasip1")) throw new Error("wasm package not installed");
 } else {
   throw new Error(`mode must be native or wasm, got ${mode}`);

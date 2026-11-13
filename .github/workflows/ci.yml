@@ -98,6 +98,39 @@ jobs:
     needs: [rust]
     uses: ./.github/workflows/build-native.yml
 
+  # Each release binary on its own CPU, inside Debian 11 (glibc 2.31). A binary linked against
+  # the runner's glibc would not load there; the cross-built ones (glibc 2.17) must. No WebAssembly
+  # package is installed, so a binary that fails to load fails the tests.
+  native-test:
+    name: native-test / ${{ matrix.target }}
+    needs: [native]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    container: node:22-bullseye
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: bindings-${{ matrix.target }}
+          path: bindings/node
+      - name: Vectors through the release binary
+        run: |
+          set -euo pipefail
+          ldd --version | head -1
+          ls bindings/node/*.node
+          if ls bindings/node/*.wasm node_modules/@phron/image-wasm32-* >/dev/null 2>&1; then
+            echo "a WebAssembly build is present; this job must test the native binary only"; exit 1
+          fi
+          npm test -w @phron/image
+
   # The release layout, assembled as publish-npm.yml does it, then a prepublish dry run and the
   # contents of every package that would be published. Nothing is published.
   package:
