@@ -7,7 +7,7 @@
     "bindings/node"
   ],
   "devDependencies": {
-    "@biomejs/biome": "^2.6.7"
+    "@biomejs/biome": "2.6.7"
   },
   "scripts": {
     "lint": "biome check .",
