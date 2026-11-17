@@ -19,7 +19,7 @@ release_date_timezone = "UTC"
 
 [packages]
 ignore_unpublished = false
-# The Rust crates are not released yet: crates.io needs its own trusted-publisher setup first.
-# Sampo reads literal `publish = false` only, not an inherited one, so the crates are listed
-# here by their `cargo/` canonical identifiers.
-ignore = ["cargo/phron-image", "cargo/phron-image-node"]
+# phron-image is released to crates.io by publish-crate.yml. The Node binding crate ships only as
+# the npm package. Sampo reads literal `publish = false` only, not an inherited one, so it is
+# listed here by its `cargo/` canonical identifier.
+ignore = ["cargo/phron-image-node"]
