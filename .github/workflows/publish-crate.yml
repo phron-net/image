@@ -1,0 +1,45 @@
+# Publish the phron-image crate to crates.io with Trusted Publishing (OIDC, no token).
+# The crate's trusted publisher on crates.io names this repository, this workflow filename
+# (publish-crate.yml) and the environment (crates-publish). It runs on ubuntu-latest, like
+# publish-npm.yml. release.yml dispatches this on each new tag (a tag pushed with GITHUB_TOKEN
+# triggers nothing); it publishes the crate version in the checked-out tree and skips a
+# version that is already on crates.io, so dispatching it again is harmless.
+name: Publish to crates.io
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: crates-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      # The runner image's Rust lags a release behind; the workspace requires the latest stable.
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2.9.3
+
+      - name: Skip a version that is already published
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "phron-image") | .version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -A 'phron-net/image publish-crate' \
+            "https://crates.io/api/v1/crates/phron-image/$version")
+          if [ "$code" = 200 ]; then echo "published=true" >> "$GITHUB_OUTPUT"; else echo "published=false" >> "$GITHUB_OUTPUT"; fi
+
+      # cargo publish builds the packaged crate first, so a broken package never reaches the registry.
+      - name: Publish
+        if: steps.version.outputs.published == 'false'
+        run: cargo publish -p phron-image
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
