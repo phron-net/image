@@ -1,5 +1,11 @@
 # @phron/image
 
+## 0.3.1 — 2026-11-17
+
+### Patch changes
+
+- Bumped due to fixed dependency group policy
+
 ## 0.3.0 — 2026-11-13
 
 ### Added
