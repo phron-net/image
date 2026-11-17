@@ -72,3 +72,28 @@ jobs:
               --notes "@phron/image ${TAG#v}. Published to npm; the changelog is in bindings/node/CHANGELOG.md."
           fi
           gh release upload "$TAG" "$RUNNER_TEMP/phron-image.typedoc.json" --clobber
+
+      # phron.net reads the earlier releases from the latest release's phron-image.versions.json
+      # (Publier's `history` as a URL), so a release needs no docs edit to join the release menu.
+      # The list holds every published release before this tag that carries the reference,
+      # oldest first, and never this tag itself (`history` may not repeat the current release).
+      - name: Attach the release history
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.which.outputs.tag }}
+        run: |
+          set -euo pipefail
+          list="$RUNNER_TEMP/phron-image.versions.json"
+          {
+            gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq \
+              '.[] | select(.draft == false and .prerelease == false)
+                   | select([.assets[].name] | index("phron-image.typedoc.json")) | .tag_name'
+            echo "$TAG"
+          } | sort -uV | awk -v tag="$TAG" '$0 == tag { exit } { print }' \
+            | jq -R -s --arg repo "$GITHUB_REPOSITORY" '
+                split("\n") | map(select(length > 0)) | map({
+                  label: ltrimstr("v"),
+                  source: "https://github.com/\($repo)/releases/download/\(.)/phron-image.typedoc.json"
+                })' > "$list"
+          cat "$list"
+          gh release upload "$TAG" "$list" --clobber
