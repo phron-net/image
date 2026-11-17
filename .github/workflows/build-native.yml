@@ -28,14 +28,14 @@ jobs:
           - target: wasm32-wasip1
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-node@v7.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2.9.3
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.target }}
       - run: npm ci
@@ -62,7 +62,7 @@ jobs:
           [ "$(printf '%s\n2.17\n' "$newest" | sort -V | tail -1)" = "2.17" ] || { echo "needs glibc $newest > 2.17"; exit 1; }
       # Everything napi generated for the target: the binary or .wasm, the WASI loaders
       # (phron-image.wasip1*.{cjs,js}) and the platform-independent loader and types.
-      - uses: actions/upload-artifact@v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bindings-${{ matrix.target }}
           path: |
