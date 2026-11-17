@@ -1,6 +1,6 @@
 //! Typed helpers for the common processing options. Each returns the option as a string, so
 //! they mix freely with raw strings in an options list. They stay inside the server's option
-//! allow-list (`ALLOWED_OPTIONS` in the engine); anything else goes through [`raw`].
+//! allow-list (`ALLOWED_OPTIONS` on the server); anything else goes through [`raw`].
 
 use crate::{Error, Result};
 

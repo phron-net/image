@@ -44,7 +44,7 @@ function baseOf({ baseUrl, label }: Pick<PublicLoaderParams, "baseUrl" | "label"
 
 /**
  * A `next/image` custom loader for a source whose access is "public". It builds unsigned
- * URLs, so it holds no secret and is safe in client code.
+ * URLs, so it holds no signing key and is safe in client code.
  *
  * Next.js asks for the widths in `images.deviceSizes` and `images.imageSizes`; set those to
  * the source's list of public widths.

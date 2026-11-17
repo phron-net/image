@@ -55,7 +55,7 @@ export interface PublicUrlParams extends Target {
 
 /**
  * Build an unsigned browser URL for a source whose access is "public":
- * `<base>/_/pr:<preset>[/w:<width>]/plain/<path>[@<format>]`. No secret involved.
+ * `<base>/_/pr:<preset>[/w:<width>]/plain/<path>[@<format>]`. No signing key involved.
  */
 export function publicUrl(params: PublicUrlParams): string {
   return native.publicUrl(params);
