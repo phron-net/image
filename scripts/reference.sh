@@ -15,7 +15,7 @@ rev=${2:-$(git rev-parse HEAD)}
 
 cd "$(dirname "$0")/../bindings/node"
 npx --yes -p typedoc@0.28.20 -p typescript@6.0.3 typedoc \
-  --options typedoc.json --json "$out" --gitRevision "$rev"
+  --options typedoc.json --json "$out" --includeVersion --gitRevision "$rev"
 
 # The file is published, so check it is the shape the reader takes and carries nothing private.
 node --input-type=module - "$out" <<'JS'
@@ -24,11 +24,14 @@ const path = process.argv[2];
 const text = readFileSync(path, "utf8");
 const doc = JSON.parse(text);
 if (doc.schemaVersion !== "2.0") throw new Error(`schemaVersion ${doc.schemaVersion}, expected 2.0`);
+// --includeVersion records the package version, which labels the release in the docs.
+const version = JSON.parse(readFileSync("package.json", "utf8")).version;
+if (doc.packageVersion !== version) throw new Error(`packageVersion ${doc.packageVersion}, expected ${version}`);
 const modules = (doc.children ?? []).map((m) => m.name);
 for (const want of ["@phron/image", "@phron/image/next"]) {
   if (!modules.includes(want)) throw new Error(`module ${want} missing; found ${modules.join(", ")}`);
 }
 const leak = text.match(/\/home\/|\/Users\/|\/runner\/|cluster\.local|prod-euc|zonhoren/i);
 if (leak) throw new Error(`the artifact mentions ${leak[0]}`);
-console.log(`ok: ${modules.join(", ")} (${text.length} bytes)`);
+console.log(`ok: ${doc.packageVersion}, ${modules.join(", ")} (${text.length} bytes)`);
 JS
