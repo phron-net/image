@@ -1,0 +1,10 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "@phron/image",
+  "entryPoints": ["ts/index.ts", "ts/next.ts"],
+  "tsconfig": "tsconfig.json",
+  "skipErrorChecking": true,
+  "sourceLinkTemplate": "https://github.com/phron-net/image/blob/{gitRevision}/{path}#L{line}",
+  "excludePrivate": true,
+  "excludeInternal": true
+}

@@ -4,6 +4,8 @@
  * the one URL builder written outside the core: the `public` cases of `conformance/vectors.json`
  * pin it to the core's output (tests/conformance.test.ts). Retire it when a WebAssembly build of
  * the core can serve browsers (docs/adr/0001-rust-core-multi-language.md).
+ *
+ * @module @phron/image/next
  */
 
 export interface NextImageLoaderProps {

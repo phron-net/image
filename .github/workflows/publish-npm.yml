@@ -92,3 +92,11 @@ jobs:
     uses: ./.github/workflows/verify-published.yml
     with:
       version: ${{ github.ref_name }}
+
+  # The SDK reference of this release, for phron.net. After the verify step so a version that
+  # failed to install never becomes the docs' latest.
+  reference:
+    needs: [verify]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/reference.yml

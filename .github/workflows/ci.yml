@@ -57,6 +57,17 @@ jobs:
       - name: Package contents
         run: npm pack -w @phron/image --dry-run
 
+  # The SDK reference artifact phron.net builds its pages from. Built on every change so a doc
+  # comment or an entry point TypeDoc cannot read fails here, not on the release.
+  reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "26"
+      - run: scripts/reference.sh "$RUNNER_TEMP/phron-image.typedoc.json"
+
   # The WebAssembly fallback: the same vectors in Node through WASI, then inside workerd.
   wasm:
     needs: [rust]

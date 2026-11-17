@@ -1,0 +1,74 @@
+# Delivers the SDK reference of a release: TypeDoc's JSON for @phron/image, attached to the
+# release's GitHub release. phron.net builds its reference pages from the latest one, so a
+# release updates the docs site with no hand step.
+#
+# publish-npm.yml calls this after the package is on npm, on the release tag. To back-fill a
+# release made before this workflow existed, run it from main with that tag as the input:
+#   gh workflow run reference.yml -f tag=v0.3.0
+# The back-fill documents main's source, so it refuses unless main still carries the tag's
+# package version.
+name: Reference
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the reference to (back-fill, run from main)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub release and attach the artifact
+    env:
+      INPUT_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0 # the back-fill reads the tag's package version
+
+      - name: Which release, and which source
+        id: which
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_TAG:-}" ]; then
+            test "$GITHUB_REF" = "refs/heads/main" || { echo "::error::run the back-fill from main"; exit 1; }
+            tag="$INPUT_TAG"
+            git rev-parse --verify "refs/tags/$tag" >/dev/null
+            at_tag=$(git show "$tag:bindings/node/package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+            at_main=$(node -p "require('./bindings/node/package.json').version")
+            test "$at_tag" = "$at_main" || { echo "::error::main is $at_main, $tag is $at_tag; the source no longer matches"; exit 1; }
+            revision=$(git rev-parse HEAD)
+          else
+            case "$GITHUB_REF" in refs/tags/v*) ;; *) echo "::error::run this on a v* tag, not $GITHUB_REF"; exit 1 ;; esac
+            tag="$GITHUB_REF_NAME"
+            revision="$tag"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "26"
+
+      - name: Generate the reference
+        env:
+          REVISION: ${{ steps.which.outputs.revision }}
+        run: scripts/reference.sh "$RUNNER_TEMP/phron-image.typedoc.json" "$REVISION"
+
+      - name: Attach it to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.which.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --title "$TAG" \
+              --notes "@phron/image ${TAG#v}. Published to npm; the changelog is in bindings/node/CHANGELOG.md."
+          fi
+          gh release upload "$TAG" "$RUNNER_TEMP/phron-image.typedoc.json" --clobber

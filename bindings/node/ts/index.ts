@@ -1,3 +1,10 @@
+/**
+ * Build and sign Phron Image URLs from Node.js. The signing runs in the Rust core, so a URL built
+ * here is byte-identical to one built by any other Phron Image SDK. Server-side only: a signing
+ * key must never reach a browser.
+ *
+ * @module @phron/image
+ */
 import { native } from "./native.js";
 
 export type { Gravity, ResizeType } from "./options.js";
