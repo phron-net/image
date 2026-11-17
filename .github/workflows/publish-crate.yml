@@ -26,12 +26,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2.9.3
 
+      # The crate and the npm package share one version (`fixed` in .sampo/config.toml), and the
+      # tag is v<version>, so a tag that disagrees with the crate means the two drifted apart.
       - name: Skip a version that is already published
         id: version
         run: |
           set -euo pipefail
           version=$(cargo metadata --no-deps --format-version 1 \
             | jq -r '.packages[] | select(.name == "phron-image") | .version')
+          test "$GITHUB_REF_NAME" = "v$version" || { echo "tag $GITHUB_REF_NAME != v$version"; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
           code=$(curl -s -o /dev/null -w '%{http_code}' -A 'phron-net/image publish-crate' \
             "https://crates.io/api/v1/crates/phron-image/$version")

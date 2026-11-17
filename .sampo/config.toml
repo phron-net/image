@@ -23,3 +23,7 @@ ignore_unpublished = false
 # the npm package. Sampo reads literal `publish = false` only, not an inherited one, so it is
 # listed here by its `cargo/` canonical identifier.
 ignore = ["cargo/phron-image-node"]
+# One library in two languages: the crate and the npm package share one version and one `v<version>`
+# tag, so a release of either bumps both. They were aligned by hand once, at 0.3.0 (the crate had
+# been published at 0.1.0 while npm was at 0.3.0); a `fixed` group keeps them equal from there.
+fixed = [["cargo/phron-image", "npm/@phron/image"]]
