@@ -1,6 +1,7 @@
 # Delivers the SDK reference of a release: TypeDoc's JSON for @phron/image, attached to the
-# release's GitHub release. phron.net builds its reference pages from the latest one, so a
-# release updates the docs site with no hand step.
+# release's GitHub release, and the release history of both languages. phron.net builds its
+# reference pages from the latest one, so a release updates the docs site with no hand step.
+# The Rust reference itself is docs.rs's rustdoc JSON, which docs.rs builds on crate publish.
 #
 # publish-npm.yml calls this after the package is on npm, on the release tag. To back-fill a
 # release made before this workflow existed, run it from main with that tag as the input:
@@ -94,6 +95,29 @@ jobs:
                 split("\n") | map(select(length > 0)) | map({
                   label: ltrimstr("v"),
                   source: "https://github.com/\($repo)/releases/download/\(.)/phron-image.typedoc.json"
+                })' > "$list"
+          cat "$list"
+          gh release upload "$TAG" "$list" --clobber
+
+      # The Rust reference's earlier releases, for its release menu: every published, unyanked
+      # crate version before this tag, oldest first, read from crates.io, each pointing at the
+      # rustdoc JSON docs.rs built for it. The crate skips some tags (0.1.1 to 0.3.0 never went
+      # to crates.io), so the list comes from the registry, not from the tags.
+      - name: Attach the Rust release history
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.which.outputs.tag }}
+        run: |
+          set -euo pipefail
+          list="$RUNNER_TEMP/phron-image.rust-versions.json"
+          current="${TAG#v}"
+          curl -fsS -A "phron-net/image reference workflow" https://crates.io/api/v1/crates/phron-image \
+            | jq -r '.versions[] | select(.yanked | not) | .num' \
+            | { cat; echo "$current"; } | sort -uV | awk -v cur="$current" '$0 == cur { exit } { print }' \
+            | jq -R -s '
+                split("\n") | map(select(length > 0)) | map({
+                  label: .,
+                  source: "https://docs.rs/crate/phron-image/\(.)/json"
                 })' > "$list"
           cat "$list"
           gh release upload "$TAG" "$list" --clobber
