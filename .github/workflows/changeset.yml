@@ -28,7 +28,9 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          if git diff --name-only --diff-filter=A "$BASE"...HEAD | grep -q -E '^\.sampo/changesets/.+\.md$'; then
+          # grep reads the whole list (no -q): -q stops at the first match, and under pipefail the SIGPIPE it
+          # sends git diff would make this test fail on a long list even though a changeset is in it.
+          if git diff --name-only --diff-filter=A "$BASE"...HEAD | grep -E '^\.sampo/changesets/.+\.md$' > /dev/null; then
             echo "A changeset is present."
             exit 0
           fi
